@@ -1,0 +1,23 @@
+# Production configuration template
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/sensorhub}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:replace-with-your-mysql-password}
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+platform:
+  public-base-url: ${PLATFORM_PUBLIC_BASE_URL:http://localhost:7529/api}
+
+sensor:
+  realtime:
+    push-interval-ms: 3000
+
+dubbo:
+  application:
+    register-mode: interface
+    qos-enable: false

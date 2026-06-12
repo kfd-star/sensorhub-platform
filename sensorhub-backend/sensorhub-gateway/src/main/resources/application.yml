@@ -1,0 +1,43 @@
+# Common gateway configuration
+server:
+  port: ${SERVER_PORT:8290}
+
+spring:
+  application:
+    name: sensorhub-gateway
+  cloud:
+    gateway:
+      default-filters:
+        - AddResponseHeader=source, sensorhub
+      routes:
+        - id: api_route
+          uri: ${SENSORHUB_INTERFACE_URI:http://127.0.0.1:8323}
+          predicates:
+            - Path=/api/**
+
+logging:
+  level:
+    org:
+      springframework:
+        cloud:
+          gateway: trace
+
+sensorhub:
+  gateway:
+    interface-host: ${SENSORHUB_GATEWAY_INTERFACE_HOST:http://127.0.0.1:8323}
+
+dubbo:
+  application:
+    name: sensorhub-dubbo-gateway
+    register-mode: interface
+    qos-enable: false
+    migration:
+      step: FORCE_INTERFACE
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    id: nacos-registry
+    address: ${NACOS_ADDRESS:nacos://localhost:8848}
+  consumer:
+    check: false

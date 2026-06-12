@@ -1,0 +1,14 @@
+.codex-logs/
+logs/
+run-logs/
+**/target/
+**/*.log
+**/node_modules/
+**/.DS_Store
+**/.idea/
+**/.vscode/
+**/.umi/
+**/.umi-production/
+**/.umi-test/
+**/dist/
+.learnings/

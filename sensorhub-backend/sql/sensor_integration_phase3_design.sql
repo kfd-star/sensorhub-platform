@@ -1,0 +1,141 @@
+-- Draft aligned with the current Phase 3 implementation in sensorhub-backend.
+-- Table names use snake_case, column names use camelCase to match the existing repo style.
+-- The backend currently auto-initializes these tables on startup.
+
+CREATE TABLE IF NOT EXISTS sensor_data_source (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'primary key',
+    code VARCHAR(64) NOT NULL COMMENT 'source code',
+    name VARCHAR(128) NOT NULL COMMENT 'source name',
+    type VARCHAR(32) NOT NULL COMMENT 'http / ws / db / mixed',
+    baseUrl VARCHAR(512) NULL COMMENT 'http base url',
+    wsUrl VARCHAR(512) NULL COMMENT 'websocket url',
+    status TINYINT NOT NULL DEFAULT 1 COMMENT '0-disabled,1-enabled',
+    configJson TEXT NULL COMMENT 'extra config',
+    createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updateTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    isDelete TINYINT NOT NULL DEFAULT 0,
+    UNIQUE KEY uk_sensor_data_source_code (code)
+) COMMENT='sensor data source';
+
+CREATE TABLE IF NOT EXISTS sensor_device (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'primary key',
+    deviceCode VARCHAR(128) NOT NULL COMMENT 'platform device code',
+    deviceName VARCHAR(256) NOT NULL COMMENT 'device name',
+    deviceType VARCHAR(64) NOT NULL COMMENT 'gps / weather / image / custom',
+    category VARCHAR(64) NULL COMMENT 'device category',
+    description VARCHAR(512) NULL COMMENT 'description',
+    deviceToken VARCHAR(256) NULL COMMENT 'device token',
+    dataSourceId BIGINT NULL COMMENT 'sensor_data_source.id',
+    legacyDeviceId VARCHAR(128) NULL COMMENT 'legacy source device id',
+    dataEndpoint VARCHAR(512) NULL COMMENT 'default data endpoint',
+    realtimeKey VARCHAR(256) NULL COMMENT 'ws topic or device key',
+    configJson TEXT NULL COMMENT 'device config',
+    dataFieldsJson TEXT NULL COMMENT 'field schema',
+    status TINYINT NOT NULL DEFAULT 1 COMMENT '0-disabled,1-enabled',
+    createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updateTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    isDelete TINYINT NOT NULL DEFAULT 0,
+    UNIQUE KEY uk_sensor_device_code (deviceCode),
+    KEY idx_sensor_device_type (deviceType),
+    KEY idx_sensor_device_source (dataSourceId)
+) COMMENT='sensor device';
+
+CREATE TABLE IF NOT EXISTS sensor_gps_data (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'primary key',
+    sourceRecordId BIGINT NULL COMMENT 'legacy source record id',
+    deviceToken VARCHAR(100) NOT NULL COMMENT 'device token',
+    timestampMillisecond BIGINT NULL COMMENT 'gps millisecond timestamp',
+    velocityX DOUBLE NULL COMMENT 'velocity x',
+    velocityY DOUBLE NULL COMMENT 'velocity y',
+    velocityZ DOUBLE NULL COMMENT 'velocity z',
+    rtkVelocityX DOUBLE NULL COMMENT 'rtk velocity x',
+    rtkVelocityY DOUBLE NULL COMMENT 'rtk velocity y',
+    rtkVelocityZ DOUBLE NULL COMMENT 'rtk velocity z',
+    gpsVelocityX DOUBLE NULL COMMENT 'gps velocity x',
+    gpsVelocityY DOUBLE NULL COMMENT 'gps velocity y',
+    gpsVelocityZ DOUBLE NULL COMMENT 'gps velocity z',
+    accelerationGroundX DOUBLE NULL COMMENT 'ground acceleration x',
+    accelerationGroundY DOUBLE NULL COMMENT 'ground acceleration y',
+    accelerationGroundZ DOUBLE NULL COMMENT 'ground acceleration z',
+    accelerationBodyX DOUBLE NULL COMMENT 'body acceleration x',
+    accelerationBodyY DOUBLE NULL COMMENT 'body acceleration y',
+    accelerationBodyZ DOUBLE NULL COMMENT 'body acceleration z',
+    accelerationRawX DOUBLE NULL COMMENT 'raw acceleration x',
+    accelerationRawY DOUBLE NULL COMMENT 'raw acceleration y',
+    accelerationRawZ DOUBLE NULL COMMENT 'raw acceleration z',
+    rtkYaw INT NULL COMMENT 'rtk yaw',
+    rtkYawInfo INT NULL COMMENT 'rtk yaw info',
+    gpsDate BIGINT NULL COMMENT 'gps date',
+    gpsTime BIGINT NULL COMMENT 'gps time',
+    compassX INT NULL COMMENT 'compass x',
+    compassY INT NULL COMMENT 'compass y',
+    compassZ INT NULL COMMENT 'compass z',
+    quaternionQ0 DOUBLE NULL COMMENT 'quaternion q0',
+    quaternionQ1 DOUBLE NULL COMMENT 'quaternion q1',
+    quaternionQ2 DOUBLE NULL COMMENT 'quaternion q2',
+    quaternionQ3 DOUBLE NULL COMMENT 'quaternion q3',
+    pitch DOUBLE NULL COMMENT 'pitch',
+    roll DOUBLE NULL COMMENT 'roll',
+    yaw DOUBLE NULL COMMENT 'yaw',
+    psi DOUBLE NULL COMMENT 'psi',
+    gpsPositionX DOUBLE NULL COMMENT 'gps longitude',
+    gpsPositionY DOUBLE NULL COMMENT 'gps latitude',
+    gpsPositionZ DOUBLE NULL COMMENT 'gps altitude',
+    `timestamp` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'event time',
+    UNIQUE KEY uk_sensor_gps_data_source_record (sourceRecordId),
+    KEY idx_sensor_gps_data_device_token (deviceToken),
+    KEY idx_sensor_gps_data_timestamp (`timestamp`),
+    KEY idx_sensor_gps_data_timestamp_ms (timestampMillisecond)
+) COMMENT='sensor gps telemetry data';
+
+CREATE TABLE IF NOT EXISTS sensor_api_endpoint (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'primary key',
+    endpointCode VARCHAR(128) NOT NULL COMMENT 'internal endpoint code',
+    name VARCHAR(256) NOT NULL COMMENT 'endpoint name',
+    description VARCHAR(512) NULL COMMENT 'description',
+    method VARCHAR(16) NOT NULL COMMENT 'GET / POST / PUT / DELETE',
+    internalPath VARCHAR(512) NOT NULL COMMENT 'platform internal path',
+    targetService VARCHAR(64) NOT NULL COMMENT 'sensorhub-backend / sensor-service / other',
+    targetPath VARCHAR(512) NOT NULL COMMENT 'target service path',
+    category VARCHAR(64) NULL COMMENT 'query / realtime / export / admin',
+    protocolType VARCHAR(32) NOT NULL DEFAULT 'http' COMMENT 'http / ws',
+    requestSchema TEXT NULL COMMENT 'json schema or field list',
+    responseSchema TEXT NULL COMMENT 'json schema or field list',
+    status TINYINT NOT NULL DEFAULT 1 COMMENT '0-disabled,1-enabled',
+    createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updateTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    isDelete TINYINT NOT NULL DEFAULT 0,
+    UNIQUE KEY uk_sensor_api_endpoint_code (endpointCode),
+    UNIQUE KEY uk_sensor_api_endpoint_path_method (internalPath, method)
+) COMMENT='sensor internal api endpoint';
+
+CREATE TABLE IF NOT EXISTS sensor_interface_binding (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'primary key',
+    sensorApiEndpointId BIGINT NOT NULL COMMENT 'sensor_api_endpoint.id',
+    interfaceInfoId BIGINT NOT NULL COMMENT 'interface_info.id',
+    publishStrategy VARCHAR(32) NOT NULL DEFAULT 'proxy' COMMENT 'proxy / passthrough / aggregate',
+    authStrategy VARCHAR(32) NOT NULL DEFAULT 'gateway_aksk' COMMENT 'gateway_aksk / session / internal',
+    limitStrategy VARCHAR(128) NULL COMMENT 'qps or quota strategy',
+    cacheStrategy VARCHAR(128) NULL COMMENT 'cache strategy',
+    status TINYINT NOT NULL DEFAULT 1 COMMENT '0-disabled,1-enabled',
+    createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updateTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    isDelete TINYINT NOT NULL DEFAULT 0,
+    UNIQUE KEY uk_sensor_binding_endpoint_interface (sensorApiEndpointId, interfaceInfoId),
+    KEY idx_sensor_binding_interface (interfaceInfoId)
+) COMMENT='binding from sensor endpoint to open platform interface';
+
+CREATE TABLE IF NOT EXISTS sensor_realtime_channel (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'primary key',
+    channelCode VARCHAR(128) NOT NULL COMMENT 'channel code',
+    name VARCHAR(256) NOT NULL COMMENT 'channel name',
+    wsPath VARCHAR(512) NOT NULL COMMENT 'websocket path',
+    topic VARCHAR(256) NULL COMMENT 'topic or routing key',
+    deviceType VARCHAR(64) NULL COMMENT 'related device type',
+    authType VARCHAR(32) NOT NULL DEFAULT 'session' COMMENT 'session / token / internal',
+    status TINYINT NOT NULL DEFAULT 1 COMMENT '0-disabled,1-enabled',
+    createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updateTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    isDelete TINYINT NOT NULL DEFAULT 0,
+    UNIQUE KEY uk_sensor_realtime_channel_code (channelCode)
+) COMMENT='sensor realtime channel';

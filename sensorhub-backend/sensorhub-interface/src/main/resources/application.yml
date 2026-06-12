@@ -1,0 +1,17 @@
+# Common interface service configuration
+server:
+  port: 8123
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: sensorhub-interface
+
+sensorhub:
+  client:
+    access-key: ${SENSORHUB_ACCESS_KEY:sensorhub-demo}
+    secret-key: ${SENSORHUB_SECRET_KEY:change-me}
+
+platform:
+  base-url: ${PLATFORM_BASE_URL:http://localhost:7529/api}

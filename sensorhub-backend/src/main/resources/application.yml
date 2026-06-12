@@ -1,0 +1,63 @@
+# Common local configuration
+spring:
+  application:
+    name: sensorhub-backend
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/sensorhub}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:replace-with-your-mysql-password}
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  session:
+    timeout: 86400
+    store-type: redis
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    database: ${REDIS_DATABASE:0}
+
+server:
+  port: 7529
+  servlet:
+    context-path: /api
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDelete
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+sensorhub:
+  client:
+    access-key: ${SENSORHUB_ACCESS_KEY:sensorhub-demo}
+    secret-key: ${SENSORHUB_SECRET_KEY:change-me}
+    gateway-host: ${SENSORHUB_GATEWAY_HOST:http://localhost:8290}
+
+dubbo:
+  application:
+    name: sensorhub-dubbo-provider
+    register-mode: interface
+    qos-enable: false
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    id: nacos-registry
+    address: ${NACOS_ADDRESS:nacos://localhost:8848}
+
+platform:
+  public-base-url: ${PLATFORM_PUBLIC_BASE_URL:http://localhost:7529/api}
+
+sensor:
+  realtime:
+    push-interval-ms: 3000
